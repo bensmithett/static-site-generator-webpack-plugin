@@ -29,9 +29,20 @@ StaticSiteGeneratorWebpackPlugin.prototype.apply = function(compiler) {
       var source = asset.source();
       var render = evaluate(source, /* filename: */ self.renderSrc, /* scope: */ undefined, /* includeGlobals: */ true);
 
+      if (render.hasOwnProperty('__esModule')) {
+        render = render['default'];
+      }
+
+      if (typeof render !== 'function') {
+        throw new Error('Export from "' + self.renderSrc + '" must be a function that returns an HTML string');
+      }
+
       renderPromises = self.outputPaths.map(function(outputPath) {
-        var outputFileName = path.join(outputPath, '/index.html')
-          .replace(/^(\/|\\)/, ''); // Remove leading slashes for webpack-dev-server
+        var outputFileName = outputPath.replace(/^(\/|\\)/, ''); // Remove leading slashes for webpack-dev-server
+
+        if (!/\.(html?)$/i.test(outputFileName)) {
+            outputFileName = path.join(outputFileName, '/index.html');
+        }
 
         var locals = {
           path: outputPath,
